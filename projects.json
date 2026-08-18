@@ -1,0 +1,14 @@
+[
+  {
+    "name": "VulnPulse",
+    "path": "/home/firdos/vulnpulse",
+    "github_url": "https://github.com/FirdawsM/vulnpulse",
+    "status": "done"
+  },
+  {
+    "name": "Firewall-Configurations",
+    "path": "/home/firdos/Documents/CloudLogic/Firewall-Configurations",
+    "github_url": "https://github.com/FirdawsM/Firewall-Configurations",
+    "status": "in progress"
+  }
+]
