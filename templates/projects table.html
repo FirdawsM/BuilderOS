@@ -1,0 +1,96 @@
+<div class="panel">
+  <div class="panel-header">
+    <span>&#9633;</span> PROJECTS
+    <span class="dim" style="font-weight:400; margin-left:4px;">({{ projects|length }})</span>
+  </div>
+  <div class="panel-body" style="padding-bottom:0;">
+    <div class="table-toolbar" style="margin-bottom:16px;">
+      <div class="search-box">
+        <span class="icon">&#128269;</span>
+        <input type="text" placeholder="Search projects..." data-project-search>
+      </div>
+      <select data-status-filter>
+        <option value="all">All statuses</option>
+        <option value="true">Clean only</option>
+        <option value="false">Pending only</option>
+      </select>
+    </div>
+  </div>
+
+  {% if projects %}
+  <div style="overflow-x:auto;">
+    <table class="projects-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Project</th>
+          <th>Path</th>
+          <th>Branch</th>
+          <th>Status</th>
+          <th>Ahead / Behind</th>
+          <th>Last Commit</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for project in projects %}
+        <tr data-project-row data-name="{{ project.name }}" data-branch="{{ project.branch }}" data-clean="{{ 'true' if project.clean else 'false' }}">
+          <td data-label="#">{{ loop.index }}</td>
+          <td data-label="Project" class="proj-name">
+            <span class="file-icon">&#9634;</span>
+            {{ project.name }}
+            {% if project.github_url %}
+            <a href="{{ project.github_url }}" target="_blank" rel="noopener" class="dim" style="font-size:10px;" title="Open on GitHub">&#8599;</a>
+            {% endif %}
+          </td>
+          <td data-label="Path" class="path-cell">{{ project.path }}</td>
+          <td data-label="Branch" class="dim">{{ project.branch }}</td>
+          <td data-label="Status">
+            <span class="badge {{ 'clean' if project.clean else 'pending' }}">
+              {{ 'CLEAN' if project.clean else 'PENDING' }}
+            </span>
+          </td>
+          <td data-label="Ahead / Behind" class="ahead-behind">
+            <span class="plus">+{{ project.ahead }}</span> / <span class="minus">-{{ project.behind }}</span>
+          </td>
+          <td data-label="Last Commit" class="commit-cell" title="{{ project.last_commit }}">{{ project.last_commit }}</td>
+          <td data-label="Actions">
+            <div class="actions-cell">
+              {% if not project.clean %}
+              <form class="inline" action="{{ url_for('commit', project_name=project.name) }}" method="post">
+                <input type="text" name="message" placeholder="commit message" required>
+                <button type="submit">COMMIT</button>
+              </form>
+              {% elif project.ahead > 0 %}
+              <form class="inline" action="{{ url_for('push', project_name=project.name) }}" method="post">
+                <button type="submit" class="push-btn">PUSH ({{ project.ahead }})</button>
+              </form>
+              {% else %}
+              <span class="empty-action">UP TO DATE</span>
+              {% endif %}
+
+              <button type="button" class="kebab" data-kebab aria-label="More actions">&#8942;</button>
+              <div class="kebab-menu">
+                <button type="button" class="menu-item" data-copy="{{ project.path }}">Copy path</button>
+                {% if project.github_url %}
+                <a href="{{ project.github_url }}" target="_blank" rel="noopener">Open on GitHub</a>
+                {% endif %}
+                <form action="{{ url_for('remove', project_name=project.name) }}" method="post" onsubmit="return confirm('Remove {{ project.name }} from the registry? Local files are untouched.');">
+                  <button type="submit" class="menu-item danger">Remove from registry</button>
+                </form>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="glyph">&#9633;</div>
+    No projects tracked yet.<br>
+    <a href="{{ url_for('new_project') }}" style="color: var(--amber);">Create your first project &rarr;</a>
+  </div>
+  {% endif %}
+</div>

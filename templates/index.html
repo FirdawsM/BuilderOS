@@ -1,41 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>BuilderOS</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}BuilderOS{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>BuilderOS</h1>
-    <table border="1" cellpadding="8">
-        <tr>
-            <th>Project</th><th>Status</th><th>Branch</th>
-            <th>Modified</th><th>Untracked</th><th>Working Tree</th><th>Actions</th>
-        </tr>
-        {% for project in projects %}
-        <tr>
-            <td>{{ project.name }}</td>
-            <td>{{ project.status }}</td>
-            <td>{{ project.branch }}</td>
-            <td>{{ project.modified_files }}</td>
-            <td>{{ project.untracked_files }}</td>
-            <td>{{ project.clean_label }}</td>
-            <td>
-                {% if not project.clean %}
-                <form action="/commit/{{ project.name }}" method="post">
-                    <input type="text" name="message" placeholder="Commit message" required>
-                    <button type="submit">Commit</button>
-                </form>
-                {% else %}
-                <em>Nothing to commit</em>
-                {% endif %}
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="chevron">&gt;_</span> BUILDER<span class="thin">OS</span></div>
+      <div class="tagline">local dev. version control.</div>
 
-                {% if project.ahead > 0 %}
-                <form action="/push/{{ project.name }}" method="post">
-                    <button type="submit">Push ({{ project.ahead }} commit{{ 's' if project.ahead != 1 else '' }})</button>
-                </form>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+      <ul class="nav">
+        <li><a class="nav-item {{ 'active' if active == 'dashboard' }}" href="{{ url_for('home') }}"><span class="icon">&#9679;</span> Dashboard</a></li>
+        <li><a class="nav-item {{ 'active' if active == 'projects' }}" href="{{ url_for('projects') }}"><span class="icon">&#9633;</span> Projects</a></li>
+        <li><a class="nav-item {{ 'active' if active == 'new-project' }}" href="{{ url_for('new_project') }}"><span class="icon">+</span> New Project</a></li>
+        <li><a class="nav-item {{ 'active' if active == 'github' }}" href="{{ url_for('github_connect') }}"><span class="icon">&#8635;</span> GitHub Connect</a></li>
+        <li><a class="nav-item {{ 'active' if active == 'terminal' }}" href="{{ url_for('terminal') }}"><span class="icon">&gt;_</span> Terminal</a></li>
+        <li><a class="nav-item {{ 'active' if active == 'settings' }}" href="{{ url_for('settings') }}"><span class="icon">&#9881;</span> Settings</a></li>
+      </ul>
+
+      <div class="sidebar-spacer"></div>
+
+      <div class="pro-tip">
+        <div class="tip-title">&gt;_ Pro Tip</div>
+        Commit your changes first, then push to sync with GitHub.
+      </div>
+
+      <div class="theme-toggle" data-theme-toggle>
+        <span data-theme-label>DARK MODE</span>
+        <span class="dot-indicator"></span>
+      </div>
+
+      <div class="sidebar-footer">
+        <span class="status-dot"></span> BuilderOS v2.0.0
+      </div>
+    </aside>
+
+    <main class="main">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-stack">
+          {% for category, message in messages %}
+          <div class="flash {{ category }}">
+            <span>{{ message }}</span>
+            <button data-flash-dismiss aria-label="Dismiss">&times;</button>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  {% block scripts %}{% endblock %}
 </body>
 </html>

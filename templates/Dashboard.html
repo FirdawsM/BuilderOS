@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}BuilderOS — Dashboard{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><span class="prompt">$</span> builderos<span class="cursor"></span></h1>
+    <div class="page-subline">your local development, simplified.</div>
+  </div>
+  <div class="status-pills">
+    <div class="pill"><span class="icon">&#9679;</span><span><span class="pill-label">USER</span><span class="pill-value">developer</span></span></div>
+    <div class="pill"><span class="icon">&#9632;</span><span><span class="pill-label">MODE</span><span class="pill-value">LOCAL</span></span></div>
+    <div class="pill"><span class="icon">&#9633;</span><span><span class="pill-label">PATH</span><span class="pill-value">~/projects</span></span></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-body">
+    <div class="boot">
+      &gt; BuilderOS core initialized <span class="ok">[OK]</span><br>
+      &gt; Git engine ready <span class="ok">[OK]</span><br>
+      &gt; GitHub registry {{ 'connected' if github_status.connected else 'not connected' }}
+      <span class="ok" style="color: {{ 'var(--green-glow)' if github_status.connected else 'var(--red)' }};">[{{ 'OK' if github_status.connected else '!!' }}]</span><br>
+      &gt; Loaded {{ projects|length }} project{{ 's' if projects|length != 1 else '' }} <span class="ok">[OK]</span>
+    </div>
+  </div>
+</div>
+
+<div class="quick-actions">
+  <a class="action-card amber" href="{{ url_for('new_project') }}">
+    <div class="icon-box">+</div>
+    <div>
+      <div class="action-title">New Project</div>
+      <div class="action-desc">Create & track a new repository</div>
+    </div>
+  </a>
+  <a class="action-card green" href="{{ url_for('github_connect') }}">
+    <div class="icon-box">&#8635;</div>
+    <div>
+      <div class="action-title">Connect GitHub</div>
+      <div class="action-desc">{{ 'Token connected' if github_status.connected else 'Authenticate with GitHub' }}</div>
+    </div>
+  </a>
+  <a class="action-card teal" href="{{ url_for('terminal') }}">
+    <div class="icon-box">&gt;_</div>
+    <div>
+      <div class="action-title">Terminal</div>
+      <div class="action-desc">Copy a project path to open it</div>
+    </div>
+  </a>
+  <a class="action-card violet" href="{{ url_for('home') }}">
+    <div class="icon-box">&#8635;</div>
+    <div>
+      <div class="action-title">Refresh</div>
+      <div class="action-desc">Scan projects again</div>
+    </div>
+  </a>
+</div>
+
+{% include "_projects_table.html" %}
+
+<div class="footer-note">&gt;_ Happy coding. Keep building.</div>
+
+{% endblock %}

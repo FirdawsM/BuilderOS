@@ -146,6 +146,55 @@ def get_git_status(path):
     }
 
 
+def get_last_commit(path):
+    result = subprocess.run(
+        ["git", "log", "-1", "--pretty=%s"],
+        cwd=path,
+        capture_output=True,
+        text=True
+    )
+    if result.returncode != 0:
+        return "no commits yet"
+    message = result.stdout.strip()
+    return message if message else "no commits yet"
+
+
+ENV_FILE = Path(__file__).parent / ".env"
+
+
+def get_github_token_status():
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        return {"connected": False}
+    suffix = token[-4:] if len(token) >= 4 else token
+    return {"connected": True, "suffix": suffix}
+
+
+def save_github_token(token):
+    token = token.strip()
+    if not token:
+        return {"error": "Token cannot be empty."}
+
+    lines = []
+    found = False
+    if ENV_FILE.exists():
+        with open(ENV_FILE, "r") as f:
+            for line in f:
+                if line.startswith("GITHUB_TOKEN="):
+                    lines.append(f"GITHUB_TOKEN={token}\n")
+                    found = True
+                else:
+                    lines.append(line)
+    if not found:
+        lines.append(f"GITHUB_TOKEN={token}\n")
+
+    with open(ENV_FILE, "w") as f:
+        f.writelines(lines)
+
+    os.environ["GITHUB_TOKEN"] = token
+    return {"success": True}
+
+
 def commit_project(path, message):
     add_result = subprocess.run(
         ["git", "add", "."],
