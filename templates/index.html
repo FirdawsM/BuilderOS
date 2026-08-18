@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BuilderOS</title>
+</head>
+<body>
+    <h1>BuilderOS</h1>
+    <table border="1" cellpadding="8">
+        <tr>
+            <th>Project</th><th>Status</th><th>Branch</th>
+            <th>Modified</th><th>Untracked</th><th>Working Tree</th><th>Actions</th>
+        </tr>
+        {% for project in projects %}
+        <tr>
+            <td>{{ project.name }}</td>
+            <td>{{ project.status }}</td>
+            <td>{{ project.branch }}</td>
+            <td>{{ project.modified_files }}</td>
+            <td>{{ project.untracked_files }}</td>
+            <td>{{ project.clean_label }}</td>
+            <td>
+                {% if not project.clean %}
+                <form action="/commit/{{ project.name }}" method="post">
+                    <input type="text" name="message" placeholder="Commit message" required>
+                    <button type="submit">Commit</button>
+                </form>
+                {% else %}
+                <em>Nothing to commit</em>
+                {% endif %}
+
+                {% if project.ahead > 0 %}
+                <form action="/push/{{ project.name }}" method="post">
+                    <button type="submit">Push ({{ project.ahead }} commit{{ 's' if project.ahead != 1 else '' }})</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
