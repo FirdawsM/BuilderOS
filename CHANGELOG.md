@@ -14,7 +14,7 @@ First tagged release. Development happened locally before version control was se
 - **GitHub repo creation** — create a new GitHub repository directly from BuilderOS via the GitHub REST API, then clone it locally and register it, all in one flow.
 - **Registry management** — add, remove, and update the status (`not started` / `in progress` / `done`) of tracked projects.
 - **Project selection menu** — check on a single project and stay in an interactive loop (refresh, commit, push) until quitting back to the main menu.
-- **Web dashboard** (Flask) — a local browser-based view of all tracked projects showing live git status, with a commit-and-push action per project directly from the page.
+- **Web dashboard** (Flask) — a local browser-based view of all tracked projects showing live git status, with separate Commit and Push actions per project (Push only appears once there's something committed locally waiting to go up), matching the CLI's deliberate two-step confirmation style.
 - **Error handling** — graceful handling of duplicate repo names, network failures (timeouts, no connection), and clone failures, replacing raw stack traces with clear messages.
 
 ### Notes
