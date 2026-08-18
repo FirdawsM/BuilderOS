@@ -7,6 +7,7 @@ All notable changes to BuilderOS are documented here.
 First tagged release. Development happened locally before version control was set up properly, so this release combines what would normally be two versions (CLI tool, then web dashboard) into one starting point.
 
 ### Added
+
 - **Project registry** — track local projects in a JSON file (`projects.json`), each with a name, path, GitHub URL, and status.
 - **Git status reading** — parses `git status --porcelain --branch` to report modified files, untracked files, current branch, and ahead/behind counts relative to the remote.
 - **Commit automation** — stage and commit changes with a confirmation prompt before anything is written.
@@ -18,5 +19,6 @@ First tagged release. Development happened locally before version control was se
 - **Error handling** — graceful handling of duplicate repo names, network failures (timeouts, no connection), and clone failures, replacing raw stack traces with clear messages.
 
 ### Notes
+
 - Secrets (GitHub personal access token) are stored in a local `.env` file, excluded from version control via `.gitignore`.
 - No multi-user or hosted deployment — this is a single-user, local-only tool by design.
