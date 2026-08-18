@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}BuilderOS{% endblock %}</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BuilderOS Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
   <div class="app-shell">
@@ -13,12 +13,7 @@
       <div class="tagline">local dev. version control.</div>
 
       <ul class="nav">
-        <li><a class="nav-item {{ 'active' if active == 'dashboard' }}" href="{{ url_for('home') }}"><span class="icon">&#9679;</span> Dashboard</a></li>
-        <li><a class="nav-item {{ 'active' if active == 'projects' }}" href="{{ url_for('projects') }}"><span class="icon">&#9633;</span> Projects</a></li>
-        <li><a class="nav-item {{ 'active' if active == 'new-project' }}" href="{{ url_for('new_project') }}"><span class="icon">+</span> New Project</a></li>
-        <li><a class="nav-item {{ 'active' if active == 'github' }}" href="{{ url_for('github_connect') }}"><span class="icon">&#8635;</span> GitHub Connect</a></li>
-        <li><a class="nav-item {{ 'active' if active == 'terminal' }}" href="{{ url_for('terminal') }}"><span class="icon">&gt;_</span> Terminal</a></li>
-        <li><a class="nav-item {{ 'active' if active == 'settings' }}" href="{{ url_for('settings') }}"><span class="icon">&#9881;</span> Settings</a></li>
+        <li><a class="nav-item active" href="{{ url_for('home') }}"><span class="icon">&#9679;</span> Dashboard</a></li>
       </ul>
 
       <div class="sidebar-spacer"></div>
@@ -28,35 +23,147 @@
         Commit your changes first, then push to sync with GitHub.
       </div>
 
-      <div class="theme-toggle" data-theme-toggle>
-        <span data-theme-label>DARK MODE</span>
+      <div class="theme-toggle" id="themeToggle">
+        <span id="themeLabel">DARK MODE</span>
         <span class="dot-indicator"></span>
       </div>
 
       <div class="sidebar-footer">
-        <span class="status-dot"></span> BuilderOS v2.0.0
+        <span class="status-dot"></span> BuilderOS v2.1.0
       </div>
     </aside>
 
     <main class="main">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-stack">
-          {% for category, message in messages %}
-          <div class="flash {{ category }}">
-            <span>{{ message }}</span>
-            <button data-flash-dismiss aria-label="Dismiss">&times;</button>
-          </div>
-          {% endfor %}
+      <div class="dashboard-header">
+        <h1 class="prompt"><span class="dollar">$</span> builderos<span class="cursor">_</span></h1>
+        <div class="header-meta">
+          <span class="meta-item">User: {{ token_status.username if token_status.connected else 'Guest' }}</span>
+          <span class="meta-item">Projects: {{ projects | length }}</span>
         </div>
-        {% endif %}
-      {% endwith %}
+      </div>
 
-      {% block content %}{% endblock %}
+      <div class="boot-sequence">
+        <div class="boot-line">[OK] Loaded project registry ({{ projects | length }} entries)</div>
+        <div class="boot-line">[OK] Git environment verified</div>
+        <div class="boot-line">[OK] GitHub API {% if token_status.connected %}connected (***{{ token_status.suffix }}){% else %}disconnected{% endif %}</div>
+        <div class="boot-line">[OK] Dashboard ready</div>
+      </div>
+
+      <div class="action-cards">
+        <button class="card action-card" id="btnNewProject">
+          <span class="card-icon">+</span>
+          <span class="card-title">New Local Project</span>
+          <span class="card-desc">Initialize git repo locally</span>
+        </button>
+        <button class="card action-card" id="btnConnectGithub">
+          <span class="card-icon">&#8635;</span>
+          <span class="card-title">Connect GitHub</span>
+          <span class="card-desc">{% if token_status.connected %}Update Token{% else %}Add PAT{% endif %}</span>
+        </button>
+        <button class="card action-card" id="btnRefresh">
+          <span class="card-icon">&#8635;</span>
+          <span class="card-title">Refresh</span>
+          <span class="card-desc">Rescan all projects</span>
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table class="projects-table">
+          <thead>
+            <tr>
+              <th data-sort="name">Project</th>
+              <th data-sort="path">Path</th>
+              <th data-sort="branch">Branch</th>
+              <th data-sort="ui_status">Status</th>
+              <th data-sort="ahead">Ahead/Behind</th>
+              <th data-sort="last_commit">Last Commit</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in projects %}
+            <tr class="project-row {% if p.ui_status == 'PENDING' %}row-pending{% elif p.ui_status == 'ERROR' %}row-error{% endif %}">
+              <td class="col-name">
+                <span class="folder-icon">&#128193;</span>
+                {{ p.name }}
+              </td>
+              <td class="col-path" data-path="{{ p.path }}" title="Click to copy path">{{ p.path | truncate(40, True, '...') }}</td>
+              <td class="col-branch">{{ p.branch }}</td>
+              <td class="col-status">
+                <span class="badge badge-{{ p.ui_status | lower }}">[ {{ p.ui_status }} ]</span>
+              </td>
+              <td class="col-ab">
+                {% if p.ahead > 0 or p.behind > 0 %}
+                  <span class="ab-ahead">↑{{ p.ahead }}</span>
+                  <span class="ab-behind">↓{{ p.behind }}</span>
+                {% else %}
+                  <span class="ab-sync">synced</span>
+                {% endif %}
+              </td>
+              <td class="col-commit" title="{{ p.last_commit }}">{{ p.last_commit | truncate(35, True, '...') }}</td>
+              <td class="col-actions">
+                {% if not p.clean %}
+                  <form action="/commit/{{ p.name }}" method="POST" class="inline-form">
+                    <input type="text" name="message" placeholder="Commit message..." class="commit-input" required>
+                    <button type="submit" class="btn btn-commit">Commit</button>
+                  </form>
+                  <form action="/push/{{ p.name }}" method="POST" class="inline-form">
+                    <button type="submit" class="btn btn-push">Push</button>
+                  </form>
+                {% else %}
+                  <span class="up-to-date">Up to date</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="empty-state">No projects tracked yet. Click "New Local Project" to begin.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </main>
   </div>
 
-  <script src="{{ url_for('static', filename='app.js') }}"></script>
-  {% block scripts %}{% endblock %}
+  <div class="modal-overlay" id="modalNewProject">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>New Local Project</h3>
+        <button class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <form id="formNewProject">
+        <div class="form-group">
+          <label>Project Name</label>
+          <input type="text" name="name" required placeholder="my-awesome-project">
+        </div>
+        <div class="form-group">
+          <label>Local Path</label>
+          <input type="text" name="path" required placeholder="/home/user/projects/my-awesome-project">
+        </div>
+        <button type="submit" class="btn btn-primary">Create Project</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalConnectGithub">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Connect GitHub</h3>
+        <button class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <form id="formConnectGithub">
+        <div class="form-group">
+          <label>Personal Access Token (PAT)</label>
+          <input type="password" name="token" required placeholder="ghp_..." value="{{ token_status.suffix if token_status.connected else '' }}">
+          <small>Stored securely in .env. Requires 'repo' scope.</small>
+        </div>
+        <button type="submit" class="btn btn-primary">Save & Verify</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

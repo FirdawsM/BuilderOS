@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 REGISTRY_FILE = Path(__file__).parent / "projects.json"
+ENV_FILE = Path(__file__).parent / ".env"
 
 
 def load_registry():
@@ -21,6 +22,137 @@ def load_registry():
 def save_registry(projects):
     with open(REGISTRY_FILE, "w") as f:
         json.dump(projects, f, indent=2)
+
+
+def get_all_projects_status():
+    """Fetches enriched status for all projects, sorted with PENDING/ERROR first."""
+    projects = load_registry()
+    enriched_projects = []
+    
+    for p in projects:
+        status_info = get_git_status(p["path"])
+        last_commit = get_last_commit(p["path"])
+        
+        # Determine UI status
+        if status_info.get("error"):
+            ui_status = "ERROR"
+        elif status_info.get("clean"):
+            ui_status = "CLEAN"
+        else:
+            ui_status = "PENDING"
+            
+        enriched_projects.append({
+            "name": p["name"],
+            "path": p["path"],
+            "github_url": p.get("github_url", ""),
+            "registry_status": p.get("status", "in progress"),
+            "ui_status": ui_status,
+            "branch": status_info.get("branch", "unknown"),
+            "ahead": status_info.get("ahead", 0),
+            "behind": status_info.get("behind", 0),
+            "modified_files": status_info.get("modified_files", 0),
+            "untracked_files": status_info.get("untracked_files", 0),
+            "clean": status_info.get("clean", False),
+            "last_commit": last_commit,
+            "error": status_info.get("error")
+        })
+    
+    # Sort: PENDING and ERROR first, then CLEAN
+    def sort_key(proj):
+        if proj["ui_status"] in ["PENDING", "ERROR"]:
+            return 0
+        return 1
+        
+    enriched_projects.sort(key=sort_key)
+    return enriched_projects
+
+
+def create_local_project(name, path):
+    """Creates a local directory, initializes git, and adds to registry."""
+    abs_path = str(Path(path).resolve())
+    
+    # Create directory if it doesn't exist
+    Path(abs_path).mkdir(parents=True, exist_ok=True)
+    
+    # Initialize git repo
+    init_result = subprocess.run(
+        ["git", "init"],
+        cwd=abs_path,
+        capture_output=True,
+        text=True
+    )
+    
+    if init_result.returncode != 0:
+        return {"error": f"git init failed: {init_result.stderr.strip()}"}
+    
+    # Add to registry
+    add_project(name, abs_path, github_url=None, status="in progress")
+    
+    return {"success": True, "path": abs_path}
+
+
+def set_github_remote(name, remote_url):
+    """Links an existing local project to a GitHub repository."""
+    projects = load_registry()
+    target_project = next((p for p in projects if p["name"] == name), None)
+            
+    if not target_project:
+        return {"error": f"Project '{name}' not found."}
+        
+    # Try to add remote
+    result = subprocess.run(
+        ["git", "remote", "add", "origin", remote_url],
+        cwd=target_project["path"],
+        capture_output=True,
+        text=True
+    )
+    
+    # If remote already exists, update it
+    if result.returncode != 0 and "already exists" in result.stderr:
+        result = subprocess.run(
+            ["git", "remote", "set-url", "origin", remote_url],
+            cwd=target_project["path"],
+            capture_output=True,
+            text=True
+        )
+        
+    if result.returncode != 0:
+        return {"error": f"Failed to set remote: {result.stderr.strip()}"}
+        
+    # Update registry
+    for p in projects:
+        if p["name"] == name:
+            p["github_url"] = remote_url
+            break
+    save_registry(projects)
+    
+    return {"success": True, "github_url": remote_url}
+
+
+def verify_github_token(token=None):
+    """Actually tests the token against the GitHub API."""
+    if token is None:
+        token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        return {"connected": False, "error": "No token provided"}
+    
+    try:
+        response = requests.get(
+            "https://api.github.com/user",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github+json"
+            },
+            timeout=5
+        )
+        if response.status_code == 200:
+            user = response.json()
+            return {"connected": True, "username": user.get("login"), "suffix": token[-4:]}
+        else:
+            return {"connected": False, "error": f"HTTP {response.status_code}"}
+    except Exception as e:
+        return {"connected": False, "error": str(e)}
+
 
 
 def select_project(projects):
@@ -147,6 +279,10 @@ def get_git_status(path):
 
 
 def get_last_commit(path):
+    # Safety check: ensure it's actually a git repo
+    if not (Path(path) / ".git").exists():
+        return "Not a git repository"
+        
     result = subprocess.run(
         ["git", "log", "-1", "--pretty=%s"],
         cwd=path,
@@ -154,12 +290,9 @@ def get_last_commit(path):
         text=True
     )
     if result.returncode != 0:
-        return "no commits yet"
+        return "No commits yet"
     message = result.stdout.strip()
-    return message if message else "no commits yet"
-
-
-ENV_FILE = Path(__file__).parent / ".env"
+    return message if message else "No commits yet"
 
 
 def get_github_token_status():
@@ -228,14 +361,14 @@ def push_project(path):
     )
 
     if result.returncode != 0:
-        if "no upstream branch" in result.stderr:
+        if "no upstream branch" in result.stderr or "does not have a commit checked out" in result.stderr:
             branch_result = subprocess.run(
                 ["git", "branch", "--show-current"],
                 cwd=path,
                 capture_output=True,
                 text=True
             )
-            branch_name = branch_result.stdout.strip()
+            branch_name = branch_result.stdout.strip() or "main"
 
             retry_result = subprocess.run(
                 ["git", "push", "--set-upstream", "origin", branch_name],

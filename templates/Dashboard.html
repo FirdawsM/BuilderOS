@@ -1,53 +1,72 @@
 {% extends "base.html" %}
 {% block title %}BuilderOS — Dashboard{% endblock %}
-{% block content %}
 
+{% block content %}
 <div class="page-header">
   <div>
     <h1 class="page-title"><span class="prompt">$</span> builderos<span class="cursor"></span></h1>
     <div class="page-subline">your local development, simplified.</div>
   </div>
   <div class="status-pills">
-    <div class="pill"><span class="icon">&#9679;</span><span><span class="pill-label">USER</span><span class="pill-value">developer</span></span></div>
-    <div class="pill"><span class="icon">&#9632;</span><span><span class="pill-label">MODE</span><span class="pill-value">LOCAL</span></span></div>
-    <div class="pill"><span class="icon">&#9633;</span><span><span class="pill-label">PATH</span><span class="pill-value">~/projects</span></span></div>
+    <div class="pill">
+      <span class="icon">&#9679;</span>
+      <span>
+        <span class="pill-label">USER</span>
+        <span class="pill-value">{{ token_status.username if token_status.connected else 'developer' }}</span>
+      </span>
+    </div>
+    <div class="pill">
+      <span class="icon">&#9632;</span>
+      <span>
+        <span class="pill-label">MODE</span>
+        <span class="pill-value">LOCAL</span>
+      </span>
+    </div>
+    <div class="pill">
+      <span class="icon">&#9633;</span>
+      <span>
+        <span class="pill-label">GITHUB</span>
+        <span class="pill-value">{{ 'Connected' if token_status.connected else 'Disconnected' }}</span>
+      </span>
+    </div>
   </div>
 </div>
 
 <div class="panel">
+  <div class="panel-header">SYSTEM BOOT</div>
   <div class="panel-body">
     <div class="boot">
       &gt; BuilderOS core initialized <span class="ok">[OK]</span><br>
       &gt; Git engine ready <span class="ok">[OK]</span><br>
-      &gt; GitHub registry {{ 'connected' if github_status.connected else 'not connected' }}
-      <span class="ok" style="color: {{ 'var(--green-glow)' if github_status.connected else 'var(--red)' }};">[{{ 'OK' if github_status.connected else '!!' }}]</span><br>
+      &gt; GitHub registry {{ 'connected' if token_status.connected else 'not connected' }}
+      <span class="ok {% if token_status.connected %}status-clean{% else %}status-pending{% endif %}">[{{ 'OK' if token_status.connected else '!!' }}]</span><br>
       &gt; Loaded {{ projects|length }} project{{ 's' if projects|length != 1 else '' }} <span class="ok">[OK]</span>
     </div>
   </div>
 </div>
 
 <div class="quick-actions">
-  <a class="action-card amber" href="{{ url_for('new_project') }}">
+  <button class="action-card amber" data-modal-target="modalNewProject">
     <div class="icon-box">+</div>
     <div>
       <div class="action-title">New Project</div>
       <div class="action-desc">Create & track a new repository</div>
     </div>
-  </a>
-  <a class="action-card green" href="{{ url_for('github_connect') }}">
+  </button>
+  <button class="action-card green" data-modal-target="modalConnectGithub">
     <div class="icon-box">&#8635;</div>
     <div>
       <div class="action-title">Connect GitHub</div>
-      <div class="action-desc">{{ 'Token connected' if github_status.connected else 'Authenticate with GitHub' }}</div>
+      <div class="action-desc">{{ 'Update token' if token_status.connected else 'Authenticate with GitHub' }}</div>
     </div>
-  </a>
-  <a class="action-card teal" href="{{ url_for('terminal') }}">
+  </button>
+  <button class="action-card teal" id="btnCopyBasePath">
     <div class="icon-box">&gt;_</div>
     <div>
       <div class="action-title">Terminal</div>
-      <div class="action-desc">Copy a project path to open it</div>
+      <div class="action-desc">Copy base path to clipboard</div>
     </div>
-  </a>
+  </button>
   <a class="action-card violet" href="{{ url_for('home') }}">
     <div class="icon-box">&#8635;</div>
     <div>
@@ -61,4 +80,41 @@
 
 <div class="footer-note">&gt;_ Happy coding. Keep building.</div>
 
+<!-- Modals -->
+<div class="modal-overlay" id="modalNewProject">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>New Local Project</h3>
+      <button class="modal-close" data-close-modal>&times;</button>
+    </div>
+    <form id="formNewProject">
+      <div class="form-group">
+        <label>Project Name</label>
+        <input type="text" name="name" required placeholder="my-awesome-project">
+      </div>
+      <div class="form-group">
+        <label>Local Path</label>
+        <input type="text" name="path" required placeholder="/home/user/projects/my-awesome-project">
+      </div>
+      <button type="submit" class="btn btn-primary">Create Project</button>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalConnectGithub">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Connect GitHub</h3>
+      <button class="modal-close" data-close-modal>&times;</button>
+    </div>
+    <form id="formConnectGithub">
+      <div class="form-group">
+        <label>Personal Access Token (PAT)</label>
+        <input type="password" name="token" required placeholder="ghp_..." value="{{ token_status.suffix if token_status.connected else '' }}">
+        <small>Stored securely in .env. Requires 'repo' scope.</small>
+      </div>
+      <button type="submit" class="btn btn-primary">Save & Verify</button>
+    </form>
+  </div>
+</div>
 {% endblock %}
