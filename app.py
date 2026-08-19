@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import builderos
 
@@ -9,8 +8,8 @@ def home():
     projects = builderos.get_all_projects_status()
     token_status = builderos.verify_github_token()
     return render_template(
-        "index.html", 
-        projects=projects, 
+        "Dashboard.html",
+        projects=projects,
         token_status=token_status
     )
 
@@ -87,6 +86,11 @@ def push(project_name):
     if project:
         builderos.push_project(project["path"])
         
+    return redirect(url_for("home"))
+
+@app.route("/remove/<project_name>", methods=["POST"])
+def remove(project_name):
+    builderos.remove_project(project_name)
     return redirect(url_for("home"))
 
 if __name__ == "__main__":

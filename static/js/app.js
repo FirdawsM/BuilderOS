@@ -5,7 +5,16 @@ document.addEventListener('DOMContentLoaded', () => {
   initActions();
   initSorting();
   initSearch();
+  initClock();
 });
+
+function initClock() {
+  const el = document.getElementById('clockValue');
+  if (!el) return;
+  const tick = () => { el.textContent = new Date().toLocaleTimeString('en-GB'); };
+  tick();
+  setInterval(tick, 1000);
+}
 
 function initTheme() {
   const savedTheme = localStorage.getItem('builderos-theme') || 'dark';

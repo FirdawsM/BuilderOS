@@ -9,24 +9,31 @@
   </div>
   <div class="status-pills">
     <div class="pill">
-      <span class="icon">&#9679;</span>
+      <span class="icon">&#128100;</span>
       <span>
         <span class="pill-label">USER</span>
         <span class="pill-value">{{ token_status.username if token_status.connected else 'developer' }}</span>
       </span>
     </div>
     <div class="pill">
-      <span class="icon">&#9632;</span>
+      <span class="icon">&#128421;</span>
       <span>
         <span class="pill-label">MODE</span>
         <span class="pill-value">LOCAL</span>
       </span>
     </div>
     <div class="pill">
-      <span class="icon">&#9633;</span>
+      <span class="icon">&#128193;</span>
       <span>
-        <span class="pill-label">GITHUB</span>
-        <span class="pill-value">{{ 'Connected' if token_status.connected else 'Disconnected' }}</span>
+        <span class="pill-label">PATH</span>
+        <span class="pill-value">~/projects</span>
+      </span>
+    </div>
+    <div class="pill">
+      <span class="icon">&#128337;</span>
+      <span>
+        <span class="pill-label">TIME</span>
+        <span class="pill-value" id="clockValue">--:--:--</span>
       </span>
     </div>
   </div>
@@ -78,7 +85,10 @@
 
 {% include "_projects_table.html" %}
 
-<div class="footer-note">&gt;_ Happy coding. Keep building.</div>
+<div class="footer-bar">
+  <div class="footer-tip">&gt; <strong>TIP:</strong> Commit your changes first, then push to sync with GitHub.</div>
+  <div class="footer-version"><span class="status-dot"></span> BuilderOS v2.0.0</div>
+</div>
 
 <!-- Modals -->
 <div class="modal-overlay" id="modalNewProject">

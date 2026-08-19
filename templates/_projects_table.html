@@ -3,20 +3,6 @@
     <span>&#9633;</span> PROJECTS
     <span class="dim" style="font-weight:400; margin-left:4px;">({{ projects|length }})</span>
   </div>
-  <div class="panel-body" style="padding-bottom:0;">
-    <div class="table-toolbar" style="margin-bottom:16px;">
-      <div class="search-box">
-        <span class="icon">&#128269;</span>
-        <input type="text" placeholder="Search projects..." data-project-search>
-      </div>
-      <select data-status-filter>
-        <option value="all">All statuses</option>
-        <option value="clean">Clean only</option>
-        <option value="pending">Pending only</option>
-      </select>
-    </div>
-  </div>
-
   {% if projects %}
   <div style="overflow-x:auto;">
     <table class="projects-table">
@@ -51,11 +37,7 @@
             </span>
           </td>
           <td data-label="Ahead / Behind" class="ahead-behind">
-            {% if p.ahead > 0 or p.behind > 0 %}
-              <span class="plus">+{{ p.ahead }}</span> / <span class="minus">-{{ p.behind }}</span>
-            {% else %}
-              <span class="synced">synced</span>
-            {% endif %}
+            <span class="plus">+{{ p.ahead }}</span> / <span class="{{ 'minus' if p.behind > 0 else 'synced' }}">{{ p.behind }}</span>
           </td>
           <td data-label="Last Commit" class="commit-cell" title="{{ p.last_commit }}">{{ p.last_commit | truncate(35, True, '...') }}</td>
           <td data-label="Actions">
@@ -73,8 +55,6 @@
               </form>
               {% elif p.clean %}
               <span class="empty-action">UP TO DATE</span>
-              {% endif %}
-
               <button type="button" class="kebab" data-kebab aria-label="More actions">&#8942;</button>
               <div class="kebab-menu">
                 <button type="button" class="menu-item" data-copy="{{ p.path }}">Copy path</button>
@@ -85,6 +65,7 @@
                   <button type="submit" class="menu-item danger">Remove from registry</button>
                 </form>
               </div>
+              {% endif %}
             </div>
           </td>
         </tr>

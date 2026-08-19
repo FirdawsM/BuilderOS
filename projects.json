@@ -10,5 +10,11 @@
     "path": "/home/firdos/Documents/CloudLogic/Firewall-Configurations",
     "github_url": "https://github.com/FirdawsM/Firewall-Configurations",
     "status": "in progress"
+  },
+  {
+    "name": "NorthStear",
+    "path": "/home/firdos/Documents/Northstear",
+    "github_url": null,
+    "status": "in progress"
   }
 ]
